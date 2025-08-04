@@ -9,3 +9,7 @@ resource "aws_instance" "foo" {
       Name = "TF-Instance"
   }
 }
+
+resource "aws_s3_bucket" "demo" {
+    bucket = "dkeldodkslkdowkdwlks"
+}
