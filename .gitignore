@@ -6,5 +6,5 @@
 *.tfstate.*
 
 # .tfvars files
-*.tfvars
+# *.tfvars
 .terraform.lock.hcl
