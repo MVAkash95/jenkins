@@ -2,15 +2,13 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'component', defaultValue: 'EC2', description: 'Terraform module to deploy (e.g., EC2, VPC)')
         booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
     }
 
     environment {
         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
-        AWS_DEFAULT_REGION    = 'us-east-1'
-        TERRAFORM_DIR         = "terraform/${params.component}"
+        AWS_DEFAULT_REGION    = 'us-east-1' // Add your region if needed
     }
 
     stages {
@@ -22,7 +20,7 @@ pipeline {
 
         stage('Terraform Init & Plan') {
             steps {
-                dir("${env.TERRAFORM_DIR}") {
+                dir('terraform') {
                     sh 'terraform init'
                     sh 'terraform plan -out=tfplan'
                     sh 'terraform show -no-color tfplan > tfplan.txt'
@@ -38,7 +36,7 @@ pipeline {
             }
             steps {
                 script {
-                    def plan = readFile("${env.TERRAFORM_DIR}/tfplan.txt")
+                    def plan = readFile 'terraform/tfplan.txt'
                     input message: "Do you want to apply the plan?",
                     parameters: [
                         text(name: 'Plan', description: 'Review the plan before applying', defaultValue: plan)
@@ -49,7 +47,7 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                dir("${env.TERRAFORM_DIR}") {
+                dir('terraform') {
                     sh 'terraform apply -input=false tfplan'
                 }
             }
