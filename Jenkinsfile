@@ -4,6 +4,7 @@ pipeline {
     parameters {
         choice(name: 'component', choices: ['root'], description: 'Terraform module to deploy (use "root" for full infra)')
         booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
+        choice(name: 'GIT_BRANCH', choices: ['main', 'dev'], description: 'Select Git branch to deploy from')
     }
 
     environment {
@@ -16,9 +17,15 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
                 script {
-                    env.BRANCH_NAME = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: "*/${params.GIT_BRANCH}"]],
+                        userRemoteConfigs: [[
+                            url: 'https://github.com/MVAkash95/jenkins' // Replace with your Git repo URL
+                        ]]
+                    ])
+                    env.BRANCH_NAME = params.GIT_BRANCH
                     echo "Git Branch: ${env.BRANCH_NAME}"
                     echo "Terraform Working Dir: ${env.TERRAFORM_DIR}"
                 }
