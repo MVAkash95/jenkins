@@ -177,21 +177,21 @@ pipeline {
                     echo "⚠️  ATTENTION: Approving will apply changes to your infrastructure!"
                     echo ""
                     
-                    input message: "Ready to apply Terraform changes to PRODUCTION?",
-                    ok: "Yes, Apply Changes",
-                    submitterParameter: 'APPROVER',
-                    parameters: [
-                        text(name: 'Plan', 
-                             description: 'Review the Terraform plan below before approving:', 
-                             defaultValue: plan),
-                        text(name: 'ApprovalReason', 
-                             description: 'Briefly explain why you are approving this deployment:', 
-                             defaultValue: '')
-                    ]
+                    def userInput = input message: "Ready to apply Terraform changes to PRODUCTION?",
+                        ok: "Yes, Apply Changes",
+                        submitterParameter: 'APPROVER',
+                        parameters: [
+                            text(name: 'Plan', 
+                                 description: 'Review the Terraform plan below before approving:', 
+                                 defaultValue: plan),
+                            text(name: 'ApprovalReason', 
+                                 description: 'Briefly explain why you are approving this deployment:', 
+                                 defaultValue: '')
+                        ]
                     
-                    echo "✅ Deployment approved by: ${APPROVER}"
-                    if (ApprovalReason?.trim()) {
-                        echo "📝 Approval reason: ${ApprovalReason}"
+                    echo "✅ Deployment approved by: ${userInput.APPROVER}"
+                    if (userInput.ApprovalReason?.trim()) {
+                        echo "📝 Approval reason: ${userInput.ApprovalReason}"
                     }
                 }
             }
