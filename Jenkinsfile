@@ -8,7 +8,7 @@ pipeline {
         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
         AWS_DEFAULT_REGION    = 'us-east-1'
-        TERRAFORM_DIR         = "terraform/${params.component}"
+        TERRAFORM_DIR         = "terraform/module/${params.component.toLowerCase()}"
     }
     stages {
         stage('Checkout') {
@@ -20,21 +20,26 @@ pipeline {
         stage('Branch & Parameter Validation') {
             steps {
                 script {
-                    echo "Current branch: ${env.BRANCH_NAME}"
+                    // Get branch name from Git
+                    def branchName = sh(returnStdout: true, script: 'git rev-parse --abbrev-ref HEAD').trim()
+                    env.CURRENT_BRANCH = branchName
+                    
+                    echo "Current branch: ${env.CURRENT_BRANCH}"
                     echo "Component: ${params.component}"
                     echo "Auto Approve: ${params.autoApprove}"
+                    echo "Terraform directory: ${env.TERRAFORM_DIR}"
                     
                     // Warning for autoApprove on non-main branches
-                    if (params.autoApprove && env.BRANCH_NAME != 'main') {
+                    if (params.autoApprove && env.CURRENT_BRANCH != 'main') {
                         echo "WARNING: autoApprove=true is set, but terraform apply will only run on 'main' branch."
-                        echo "Current branch '${env.BRANCH_NAME}' will only execute init and plan stages."
+                        echo "Current branch '${env.CURRENT_BRANCH}' will only execute init and plan stages."
                     }
                     
                     // Info about branch behavior
-                    if (env.BRANCH_NAME == 'main') {
+                    if (env.CURRENT_BRANCH == 'main') {
                         echo "Running on main branch - full pipeline (init, plan, approval, apply) will execute"
                     } else {
-                        echo "Running on '${env.BRANCH_NAME}' branch - only init and plan will execute"
+                        echo "Running on '${env.CURRENT_BRANCH}' branch - only init and plan will execute"
                     }
                 }
             }
@@ -42,9 +47,23 @@ pipeline {
         
         stage('Terraform Init & Plan') {
             steps {
+                script {
+                    // Check if Terraform directory exists
+                    def dirExists = sh(returnStatus: true, script: "test -d ${env.TERRAFORM_DIR}") == 0
+                    if (!dirExists) {
+                        error("Terraform directory '${env.TERRAFORM_DIR}' does not exist. Please check the component name and directory structure.")
+                    }
+                    
+                    // Check if .tf files exist
+                    def tfFilesExist = sh(returnStatus: true, script: "find ${env.TERRAFORM_DIR} -name '*.tf' | head -1") == 0
+                    if (!tfFilesExist) {
+                        error("No Terraform configuration files (.tf) found in '${env.TERRAFORM_DIR}'. Please ensure the directory contains Terraform files.")
+                    }
+                }
+                
                 dir("${env.TERRAFORM_DIR}") {
                     sh 'terraform init'
-                    sh 'terraform plan -var-file=../terraform.tfvars -out=tfplan'
+                    sh 'terraform plan -var-file=../../terraform.tfvars -out=tfplan'
                     sh 'terraform show -no-color tfplan > tfplan.txt'
                 }
             }
@@ -53,7 +72,7 @@ pipeline {
         stage('Manual Approval') {
             when {
                 allOf {
-                    branch 'main'
+                    expression { env.CURRENT_BRANCH == 'main' }
                     not {
                         equals expected: true, actual: params.autoApprove
                     }
@@ -72,7 +91,7 @@ pipeline {
         
         stage('Terraform Apply') {
             when {
-                branch 'main'
+                expression { env.CURRENT_BRANCH == 'main' }
             }
             steps {
                 dir("${env.TERRAFORM_DIR}") {
@@ -84,13 +103,11 @@ pipeline {
         
         stage('Non-Main Branch Summary') {
             when {
-                not {
-                    branch 'main'
-                }
+                expression { env.CURRENT_BRANCH != 'main' }
             }
             steps {
                 script {
-                    echo "SUMMARY FOR '${env.BRANCH_NAME}' BRANCH:"
+                    echo "SUMMARY FOR '${env.CURRENT_BRANCH}' BRANCH:"
                     echo "Terraform init completed successfully"
                     echo "Terraform plan completed successfully"
                     echo "Terraform apply skipped (only runs on main branch)"
@@ -104,8 +121,8 @@ pipeline {
     post {
         always {
             script {
-                echo "Pipeline completed for branch: ${env.BRANCH_NAME}"
-                if (env.BRANCH_NAME != 'main') {
+                echo "Pipeline completed for branch: ${env.CURRENT_BRANCH}"
+                if (env.CURRENT_BRANCH != 'main') {
                     echo "To apply these changes, merge to main branch and run the pipeline there"
                 }
             }
