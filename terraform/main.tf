@@ -1,6 +1,6 @@
 module "ec2" {
     source = "./module/EC2"
-    # for_each = var.instance
+    for_each = var.instance
     instance_type = each.value.instance_type
     ami = each.value.ami
     iam_instance_profile = each.value.iam_instance_profile

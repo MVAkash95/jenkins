@@ -1,3 +1,6 @@
+variable "instance" {
+  
+}
 variable "instance_type" {
     type = string
 }
