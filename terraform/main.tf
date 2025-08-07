@@ -1,5 +1,5 @@
 module "ec2" {
-    source = "./module/EC2"
+    source = "./module/ec2"
     for_each = var.instance
     instance_type = each.value.instance_type
     ami = each.value.ami
