@@ -11,7 +11,7 @@ pipeline {
         AWS_DEFAULT_REGION    = 'us-east-1'
         // TERRAFORM_DIR         = "terraform/module/${params.component.toLowerCase()}"
         // TERRAFORM_DIR         = "terraform/${params.component.toLowerCase()}"
-        TERRAFORM_DIR         = "terraform/"
+        TERRAFORM_DIR         = "terraform/*"
     }
     
     stages {
