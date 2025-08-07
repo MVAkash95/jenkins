@@ -9,6 +9,7 @@ pipeline {
         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
         AWS_DEFAULT_REGION    = 'us-east-1'
+        // TERRAFORM_DIR         = "terraform/module/${params.component.toLowerCase()}"
         TERRAFORM_DIR         = "terraform/${params.component.toLowerCase()}"
     }
     
@@ -95,8 +96,12 @@ pipeline {
             steps {
                 script {
                     // Check if we're using new structure (dev branch) or old structure (main branch)
-                    def newStructureDir = "terraform/module/${params.component.toLowerCase()}"
-                    def oldStructureDir = "terraform/${params.component.toUpperCase()}"
+                    // def newStructureDir = "terraform/module/${params.component.toLowerCase()}"
+                    // def oldStructureDir = "terraform/${params.component.toUpperCase()}"
+                    def terraformRootDir = "terraform"
+                    env.TERRAFORM_DIR = terraformRootDir
+                    env.VAR_FILE_PATH = "${terraformRootDir}/terraform.tfvars"
+
                     
                     def useNewStructure = sh(returnStatus: true, script: "test -d ${newStructureDir}") == 0
                     def useOldStructure = sh(returnStatus: true, script: "test -d ${oldStructureDir}") == 0
