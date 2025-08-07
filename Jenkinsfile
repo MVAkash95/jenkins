@@ -2,7 +2,7 @@ pipeline {
     agent any
     parameters {
         choice(name: 'targetBranch', choices: ['main', 'dev'], description: 'Select branch to run pipeline from')
-        string(name: 'component', defaultValue: 'ec2', description: 'Terraform module to deploy (e.g., ec2, vpc)')
+        // string(name: 'component', defaultValue: 'ec2', description: 'Terraform module to deploy (e.g., ec2, vpc)')
         booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan? (Only works on main branch)')
     }
     environment {
@@ -10,7 +10,8 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
         AWS_DEFAULT_REGION    = 'us-east-1'
         // TERRAFORM_DIR         = "terraform/module/${params.component.toLowerCase()}"
-        TERRAFORM_DIR         = "terraform/${params.component.toLowerCase()}"
+        // TERRAFORM_DIR         = "terraform/${params.component.toLowerCase()}"
+        TERRAFORM_DIR         = "terraform/"
     }
     
     stages {
@@ -53,7 +54,7 @@ pipeline {
                     echo " PIPELINE CONFIGURATION:"
                     echo "Selected Branch: ${params.targetBranch}"
                     echo "Actual Branch: ${env.CURRENT_BRANCH}"
-                    echo " Component: ${params.component}"
+                    // echo " Component: ${params.component}"
                     echo "Auto Approve: ${params.autoApprove}"
                     echo "Terraform Directory: ${env.TERRAFORM_DIR}"
                     echo ""
@@ -121,7 +122,7 @@ pipeline {
                         echo ""
                         echo "Available directories:"
                         sh 'find terraform -type d -name "*" | head -10 || echo "No terraform directories found"'
-                        error("Terraform directory not found for component '${params.component}'")
+                        // error("Terraform directory not found for component '${params.component}'")
                     }
                     
                     // Check if .tf files exist
@@ -225,7 +226,7 @@ pipeline {
                     echo "DEVELOPMENT BRANCH EXECUTION SUMMARY"
                     echo "════════════════════════════════════════"
                     echo "Selected Branch: ${params.targetBranch}"
-                    echo "Component: ${params.component}"
+                    // echo "Component: ${params.component}"
                     echo "Directory Structure: ${env.TERRAFORM_DIR}"
                     echo ""
                     echo "COMPLETED STAGES:"
@@ -263,7 +264,7 @@ pipeline {
                 echo "PIPELINE EXECUTION COMPLETED"
                 echo "════════════════════════════════════════"
                 echo "Selected Branch: ${params.targetBranch}"
-                echo "Component: ${params.component}"
+                // echo "Component: ${params.component}"
                 echo "Directory: ${env.TERRAFORM_DIR ?: 'Not determined'}"
                 echo "Execution Time: ${new Date().format('yyyy-MM-dd HH:mm:ss')}"
                 
